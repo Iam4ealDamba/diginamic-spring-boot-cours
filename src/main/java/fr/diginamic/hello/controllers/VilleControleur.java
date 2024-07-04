@@ -7,62 +7,92 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.diginamic.hello.dto.VilleDto;
 import fr.diginamic.hello.models.Ville;
+import fr.diginamic.hello.services.VilleService;
 
 @RestController
 @RequestMapping("/villes")
 public class VilleControleur {
-    List<Ville> villes = new ArrayList<>(
-            Arrays.asList(new Ville("Paris", 1000000), new Ville("Lyon", 500000), new Ville("Marseille", 50000)));
+    @Autowired
+    VilleService villeService;
 
     @GetMapping
     public ResponseEntity<List<Ville>> All() {
-        return ResponseEntity.ok(villes);
+        Optional<List<Ville>> villes = Optional.ofNullable(villeService.findAll());
+
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(villes.get());
+    }
+
+    @GetMapping("/id/{id}")
+    public ResponseEntity<Ville> OneById(@PathVariable Integer id) {
+        Optional<Ville> villes = Optional.ofNullable(villeService.findById(id));
+
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(villes.get());
+    }
+
+    @GetMapping("/title/{title}")
+    public ResponseEntity<Ville> OneByTitle(@PathVariable String nom) {
+        Optional<Ville> villes = Optional.ofNullable(villeService.findByTitle(nom));
+
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(villes.get());
     }
 
     @PostMapping
-    public ResponseEntity<String> save(@RequestBody Ville ville) {
-        Optional<Ville> occ = villes.stream().filter(v -> v.getNom().equals(ville.getNom())).findFirst();
+    public ResponseEntity<List<Ville>> save(@RequestBody VilleDto ville) {
+        Optional<List<Ville>> villes = Optional.ofNullable(villeService.save(ville));
 
-        if (occ.isPresent()) {
-            return ResponseEntity.badRequest().body("La ville existe déjà");
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
         } else {
-            villes.add(ville);
-            return ResponseEntity.ok("Ville ajoutee");
+            return ResponseEntity.ok(villes.get());
         }
     }
 
     @PutMapping
-    public ResponseEntity<String> update(@RequestBody Ville ville) {
-        Optional<Ville> occ = villes.stream().filter(v -> v.getNom().equals(ville.getNom())).findFirst();
+    public ResponseEntity<List<Ville>> update(@RequestBody Ville ville) {
+        Optional<List<Ville>> villes = Optional.ofNullable(villeService.update(ville));
 
-        if (occ.isPresent()) {
-            villes.get(villes.indexOf(occ.get())).setNbHabitants(ville.getNbHabitants());
-            return ResponseEntity.ok("Ville modifiée");
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
         } else {
-            return ResponseEntity.badRequest().body("La ville n'existe pas");
+            return ResponseEntity.ok(villes.get());
         }
     }
 
     @DeleteMapping
-    public ResponseEntity<String> delete(@RequestParam String ville) {
-        System.out.println(ville);
-        Optional<Ville> occ = villes.stream().filter(v -> v.getNom().equals(ville)).findFirst();
-        if (occ.isPresent()) {
-            villes.remove(occ.get());
-            return ResponseEntity.ok("Ville supprimée");
+    public ResponseEntity<List<Ville>> delete(@RequestParam Integer id) {
+        Optional<List<Ville>> villes = Optional.ofNullable(villeService.delete(id));
+
+        if (villes.isEmpty()) {
+            return ResponseEntity.notFound().build();
         } else {
-            return ResponseEntity.badRequest().body("La ville n'existe pas");
+            return ResponseEntity.ok(villes.get());
         }
     }
 }
